@@ -1,10 +1,10 @@
 <?php
 
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\BookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BooksController;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,18 +17,16 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get("/books/show/{id}", [BookController::class, "show"]);
-Route::post("/books/store", [BookController::class, "store"]);
-Route::get("/books", [BookController::class, "index"]);
+//Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+//    return $request->user();
+//});
 
+Route::get("/books", [BooksController::class, "index"]);
+Route::apiResource('/books', BooksController::class)->only(['index', 'show']);
 Route::post("/login", [AuthController::class, "login"]);
-
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::post("/logout", [AuthController::class, "logout"]);
-    Route::post("/books/update/{id}", [BookController::class, "update"]);
-    Route::delete("/books/delete/{id}", [BookController::class, "destroy"]);
+    Route::apiResource("/books", BooksController::class)->except(['index', 'show']);
+    Route::get('/session', [AuthController::class, 'session']);
 });

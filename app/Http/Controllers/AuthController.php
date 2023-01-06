@@ -3,35 +3,38 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\ApiFormatter;
-use App\Models\User;
+use App\Http\Requests\LoginRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    public function login(Request $request){
-        $data = $request->validate([
-            "email" => "required",
-            "password" => "required"
-        ]);
+    use \App\Traits\HttpResponse;
 
-        $email = User::where("email", $data['email'])->first();
-        if(!$email){
-            return ApiFormatter::createApi(200, "Email not found");
+    public function login(LoginRequest $request){
+        $request->validated($request->all());
+
+        if(!Auth::attempt($request->all())){
+            return $this->error(null, "Credential was invalid.", 401);
         }
-
-        if(Auth::attempt($data)){
-            $token = $request->user()->createToken("usertoken")->plainTextToken;
-
-            return ApiFormatter::createApi(200, "Authenticated", ["token" => $token, "user" => auth()->user()]);
-        }
-
+        
+        $token = $request->user()->createToken("LoginTokenOf_" . $request->email)->plainTextToken;
+        return $this->success(["token" => $token], "Authenticated",201);
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
-        auth()->user()->tokens()->delete();
+        $user = $request->user();
+        $logout = $user->tokens()->delete();
+        if(!$logout){
+            return $this->error(null, "Failed logout", 400);
+        }
+        return $this->success(null, "Logged out.", 200);
+    }
 
-        return ApiFormatter::createApi(200, "Logged Out", auth()->user());
+    public function session(Request $request)
+    {
+        $user = $request->user();
+        return $this->success($user, "Authenticated", 200);
     }
 }
